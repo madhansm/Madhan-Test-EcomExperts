@@ -423,7 +423,12 @@
             {%- when 'variant_picker' -%}
               {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
             {%- when 'buy_buttons' -%}
-              {%- render 'buy-buttons', block: block, product: product, product_form_id: product_form_id, section_id: section.id, show_pickup_availability: true -%}
+                {% assign hasSize = false %}
+                {%- assign optionList = product.options_with_values | map: 'name' |  downcase -%}
+              {%- if optionList contains 'size' -%}
+                {% assign hasSize = true %}
+              {%- endif -%}
+              {%- render 'buy-buttons', block: block, product: product, product_form_id: product_form_id, section_id: section.id, show_pickup_availability: true, hasSize: hasSize -%}
             {%- when 'rating' -%}
               {%- if product.metafields.reviews.rating.value != blank -%}
                 {% liquid

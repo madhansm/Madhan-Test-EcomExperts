@@ -959,7 +959,8 @@ class VariantSelects extends HTMLElement {
   }
 
   onVariantChange() {
-    this.updateOptions();
+    this.updateRadioOptions();
+    this.updateSelectOptions();
     this.updateMasterId();
     this.toggleAddButton(true, '', false);
     this.updatePickupAvailability();
@@ -969,6 +970,7 @@ class VariantSelects extends HTMLElement {
     if (!this.currentVariant) {
       this.toggleAddButton(true, '', true);
       this.setUnavailable();
+      this.updateVariantMedia();
     } else {
       this.updateMedia();
       // disable selected_variant on page refresh
@@ -979,8 +981,17 @@ class VariantSelects extends HTMLElement {
     }
   }
 
-  updateOptions() {
-    this.options = Array.from(this.querySelectorAll('select'), (select) => select.value);
+  updateSelectOptions() {
+    const selectedOptions = Array.from(this.parentElement.querySelectorAll('variant-selects select'), (select) => select.value);
+    this.options = this.options ? [...this.options, ...selectedOptions] : selectedOptions
+  }
+  updateRadioOptions() {
+    const fieldsets = Array.from(this.parentElement.querySelectorAll('variant-radios fieldset'));
+    const selectedOptions = fieldsets.map((fieldset) => {
+      return Array.from(fieldset.querySelectorAll('input')).find((radio) => radio.checked).value;
+    });
+    this.options = [];
+    this.options = this.options ? [...this.options, ...selectedOptions] : selectedOptions
   }
 
   updateMasterId() {
@@ -993,18 +1004,30 @@ class VariantSelects extends HTMLElement {
     });
   }
 
+  updateVariantMedia() {
+    const fieldsets = Array.from(this.parentElement.querySelectorAll('variant-radios fieldset'));
+    const selectedOptions = fieldsets.map((fieldset) => {
+      return Array.from(fieldset.querySelectorAll('input')).find((radio) => radio.checked);
+    });
+    const mediaGalleries = document.querySelectorAll(`[id^="MediaGallery-${this.dataset.section}"]`);
+    mediaGalleries.forEach((mediaGallery) =>
+      mediaGallery.setActiveMedia(`${this.dataset.section}-${selectedOptions[0]?.getAttribute('data-media-alt')}`, true)
+    );
+    
+  }
+
   updateMedia() {
     if (!this.currentVariant) return;
     if (!this.currentVariant.featured_media) return;
 
     const mediaGalleries = document.querySelectorAll(`[id^="MediaGallery-${this.dataset.section}"]`);
     mediaGalleries.forEach((mediaGallery) =>
-      mediaGallery.setActiveMedia(`${this.dataset.section}-${this.currentVariant.featured_media.id}`, true)
+      mediaGallery.setActiveMedia(`${this.dataset.section}-${this.currentVariant.featured_media.alt}`, true)
     );
 
     const modalContent = document.querySelector(`#ProductModal-${this.dataset.section} .product-media-modal__content`);
     if (!modalContent) return;
-    const newMediaModal = modalContent.querySelector(`[data-media-id="${this.currentVariant.featured_media.id}"]`);
+    const newMediaModal = modalContent.querySelector(`[data-media-id="${this.currentVariant.featured_media.alt}"]`);
     modalContent.prepend(newMediaModal);
   }
 
@@ -1206,13 +1229,6 @@ class VariantRadios extends VariantSelects {
       } else {
         input.classList.add('disabled');
       }
-    });
-  }
-
-  updateOptions() {
-    const fieldsets = Array.from(this.querySelectorAll('fieldset'));
-    this.options = fieldsets.map((fieldset) => {
-      return Array.from(fieldset.querySelectorAll('input')).find((radio) => radio.checked).value;
     });
   }
 }

@@ -29,14 +29,14 @@ if (!customElements.get('media-gallery')) {
       }
 
       setActiveMedia(mediaId, prepend) {
-        const activeMedia = this.elements.viewer.querySelector(`[data-media-id="${mediaId}"]`);
-        this.elements.viewer.querySelectorAll('[data-media-id]').forEach((element) => {
+        const activeMedia = this.elements.viewer.querySelectorAll(`[data-media-alt="${mediaId}"]`);
+        this.elements.viewer.querySelectorAll('[data-media-alt]').forEach((element) => {
           element.classList.remove('is-active');
         });
-        activeMedia.classList.add('is-active');
+        activeMedia.forEach(el=>el.classList.add('is-active'));
 
         if (prepend) {
-          activeMedia.parentElement.prepend(activeMedia);
+          activeMedia[0].parentElement.prepend(activeMedia[0]);
           if (this.elements.thumbnails) {
             const activeThumbnail = this.elements.thumbnails.querySelector(`[data-target="${mediaId}"]`);
             activeThumbnail.parentElement.prepend(activeThumbnail);
@@ -53,7 +53,7 @@ if (!customElements.get('media-gallery')) {
             activeMedia.scrollIntoView({ behavior: 'smooth' });
           }
         });
-        this.playActiveMedia(activeMedia);
+        this.playActiveMedia(activeMedia[0]);
 
         if (!this.elements.thumbnails) return;
         const activeThumbnail = this.elements.thumbnails.querySelector(`[data-target="${mediaId}"]`);
