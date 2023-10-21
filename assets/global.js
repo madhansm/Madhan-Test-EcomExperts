@@ -959,7 +959,8 @@ class VariantSelects extends HTMLElement {
   }
 
   onVariantChange() {
-    this.updateOptions();
+    this.updateRadioOptions();
+    this.updateSelectOptions();
     this.updateMasterId();
     this.toggleAddButton(true, '', false);
     this.updatePickupAvailability();
@@ -969,17 +970,28 @@ class VariantSelects extends HTMLElement {
     if (!this.currentVariant) {
       this.toggleAddButton(true, '', true);
       this.setUnavailable();
+      this.updateVariantMedia();
     } else {
       this.updateMedia();
-      this.updateURL();
+      // disable selected_variant on page refresh
+      // this.updateURL();
       this.updateVariantInput();
       this.renderProductInfo();
       this.updateShareUrl();
     }
   }
 
-  updateOptions() {
-    this.options = Array.from(this.querySelectorAll('select'), (select) => select.value);
+  updateSelectOptions() {
+    const selectedOptions = Array.from(this.parentElement.querySelectorAll('variant-selects select'), (select) => select.value);
+    this.options = this.options ? [...this.options, ...selectedOptions] : selectedOptions
+  }
+  updateRadioOptions() {
+    const fieldsets = Array.from(this.parentElement.querySelectorAll('variant-radios fieldset'));
+    const selectedOptions = fieldsets.map((fieldset) => {
+      return Array.from(fieldset.querySelectorAll('input')).find((radio) => radio.checked).value;
+    });
+    this.options = [];
+    this.options = this.options ? [...this.options, ...selectedOptions] : selectedOptions
   }
 
   updateMasterId() {
@@ -992,18 +1004,30 @@ class VariantSelects extends HTMLElement {
     });
   }
 
+  updateVariantMedia() {
+    const fieldsets = Array.from(this.parentElement.querySelectorAll('variant-radios fieldset'));
+    const selectedOptions = fieldsets.map((fieldset) => {
+      return Array.from(fieldset.querySelectorAll('input')).find((radio) => radio.checked);
+    });
+    const mediaGalleries = document.querySelectorAll(`[id^="MediaGallery-${this.dataset.section}"]`);
+    mediaGalleries.forEach((mediaGallery) =>
+      mediaGallery.setActiveMedia(`${this.dataset.section}-${selectedOptions[0]?.getAttribute('data-media-alt')}`, true)
+    );
+    
+  }
+
   updateMedia() {
     if (!this.currentVariant) return;
     if (!this.currentVariant.featured_media) return;
 
     const mediaGalleries = document.querySelectorAll(`[id^="MediaGallery-${this.dataset.section}"]`);
     mediaGalleries.forEach((mediaGallery) =>
-      mediaGallery.setActiveMedia(`${this.dataset.section}-${this.currentVariant.featured_media.id}`, true)
+      mediaGallery.setActiveMedia(`${this.dataset.section}-${this.currentVariant.featured_media.alt}`, true)
     );
 
     const modalContent = document.querySelector(`#ProductModal-${this.dataset.section} .product-media-modal__content`);
     if (!modalContent) return;
-    const newMediaModal = modalContent.querySelector(`[data-media-id="${this.currentVariant.featured_media.id}"]`);
+    const newMediaModal = modalContent.querySelector(`[data-media-id="${this.currentVariant.featured_media.alt}"]`);
     modalContent.prepend(newMediaModal);
   }
 
@@ -1207,13 +1231,6 @@ class VariantRadios extends VariantSelects {
       }
     });
   }
-
-  updateOptions() {
-    const fieldsets = Array.from(this.querySelectorAll('fieldset'));
-    this.options = fieldsets.map((fieldset) => {
-      return Array.from(fieldset.querySelectorAll('input')).find((radio) => radio.checked).value;
-    });
-  }
 }
 
 customElements.define('variant-radios', VariantRadios);
@@ -1257,3 +1274,45 @@ class ProductRecommendations extends HTMLElement {
 }
 
 customElements.define('product-recommendations', ProductRecommendations);
+
+async function handleFreebieInCart(cartPage) {
+  const cartEl = cartPage || document.querySelector('cart-notification') || document.querySelector('cart-drawer');
+  const cart = await fetch('/cart.js').then(res=>res.json());
+  const blackMediumID = 47115442356543;
+  const freebieID = 47111563673919;
+  const blackInCart = cart.items.filter(item=>item.id==blackMediumID).length;
+  const freebieInCart = cart.items.filter(item=>item.id==freebieID).length;
+
+  if( blackInCart && !freebieInCart ) {
+    const formData = {
+      items: [
+        {
+          quantity: 1,
+          id: freebieID
+        }
+      ]
+    }
+    if(cartEl){
+      formData['sections'] = cartEl.getSectionsToRender().map((section) => section.id)
+      formData['sections_url'] = window.location.pathname;
+    }
+    const config = fetchConfig('javascript');
+    config.body = JSON.stringify(formData);
+    const addCart = await fetch(`${routes.cart_add_url}`,config).then(res=>res.json())
+    return addCart;
+
+  } else if (!blackInCart && freebieInCart) {
+    const formData ={
+      id: `${freebieID}`,
+      quantity: 0,
+    }
+    if(cartEl){
+      formData['sections'] = cartPage ? cartEl.getSectionsToRender().map((section) => section.section) : cartEl.getSectionsToRender().map((section) => section.id) 
+      formData['sections_url'] = window.location.pathname;
+    }
+    const removeCart = await fetch(`${routes.cart_change_url}`, { ...fetchConfig(), ...{ body: JSON.stringify(formData) } }).then((response) => {return response.text()})
+    return removeCart
+  }
+  console.log('added')
+  return;
+}

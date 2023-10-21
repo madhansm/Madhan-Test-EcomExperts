@@ -550,7 +550,9 @@ a.product__text {
 .product__media-item.product__media-item--variant {
   display: none;
 }
-
+.product__media-item.product__media-item--variant.is-active {
+  display: block;
+}
 .product__media-item--variant:first-child {
   display: block;
 }
