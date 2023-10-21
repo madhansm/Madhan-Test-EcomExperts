@@ -119,8 +119,8 @@ class CartItems extends HTMLElement {
       })
       .then((state) => {
         handleFreebieInCart(this).then((state2)=>{
+          // re-assigning state only if freebie has changes
           if(state2) state = state2;
-          console.log(state)
           const parsedState = JSON.parse(state);
           const quantityElement =
             document.getElementById(`Quantity-${line}`) || document.getElementById(`Drawer-quantity-${line}`);

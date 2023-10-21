@@ -1313,6 +1313,5 @@ async function handleFreebieInCart(cartPage) {
     const removeCart = await fetch(`${routes.cart_change_url}`, { ...fetchConfig(), ...{ body: JSON.stringify(formData) } }).then((response) => {return response.text()})
     return removeCart
   }
-  console.log('added')
   return;
 }
