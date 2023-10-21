@@ -54,6 +54,9 @@
               name="options[{{ option.name | escape }}]"
               form="{{ product_form_id }}"
             >
+            {%- if option.name == 'Size' or option.name == 'size' -%}
+              <option value="unselected" disabled selected>Unselected</option>
+            {%- endif -%}
               {% render 'product-variant-options', product: product, option: option, block: block %}
             </select>
             {% render 'icon-caret' %}

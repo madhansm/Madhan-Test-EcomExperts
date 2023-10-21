@@ -971,7 +971,8 @@ class VariantSelects extends HTMLElement {
       this.setUnavailable();
     } else {
       this.updateMedia();
-      this.updateURL();
+      // disable selected_variant on page refresh
+      // this.updateURL();
       this.updateVariantInput();
       this.renderProductInfo();
       this.updateShareUrl();
@@ -1257,3 +1258,45 @@ class ProductRecommendations extends HTMLElement {
 }
 
 customElements.define('product-recommendations', ProductRecommendations);
+
+async function handleFreebieInCart(cartPage) {
+  const cartEl = cartPage || document.querySelector('cart-notification') || document.querySelector('cart-drawer');
+  const cart = await fetch('/cart.js').then(res=>res.json());
+  const blackMediumID = 47115442356543;
+  const freebieID = 47111563673919;
+  const blackInCart = cart.items.filter(item=>item.id==blackMediumID).length;
+  const freebieInCart = cart.items.filter(item=>item.id==freebieID).length;
+
+  if( blackInCart && !freebieInCart ) {
+    const formData = {
+      items: [
+        {
+          quantity: 1,
+          id: freebieID
+        }
+      ]
+    }
+    if(cartEl){
+      formData['sections'] = cartEl.getSectionsToRender().map((section) => section.id)
+      formData['sections_url'] = window.location.pathname;
+    }
+    const config = fetchConfig('javascript');
+    config.body = JSON.stringify(formData);
+    const addCart = await fetch(`${routes.cart_add_url}`,config).then(res=>res.json())
+    return addCart;
+
+  } else if (!blackInCart && freebieInCart) {
+    const formData ={
+      id: `${freebieID}`,
+      quantity: 0,
+    }
+    if(cartEl){
+      formData['sections'] = cartPage ? cartEl.getSectionsToRender().map((section) => section.section) : cartEl.getSectionsToRender().map((section) => section.id) 
+      formData['sections_url'] = window.location.pathname;
+    }
+    const removeCart = await fetch(`${routes.cart_change_url}`, { ...fetchConfig(), ...{ body: JSON.stringify(formData) } }).then((response) => {return response.text()})
+    return removeCart
+  }
+  console.log('added')
+  return;
+}
