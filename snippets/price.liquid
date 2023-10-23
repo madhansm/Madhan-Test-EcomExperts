@@ -11,9 +11,10 @@
   Usage:
   {% render 'price', product: product %}
 {% endcomment %}
+{% unless product.selected_variant == null %}
 {%- liquid
   if use_variant
-    assign target = product.selected_or_first_available_variant
+    assign target = product.selected_variant
   else
     assign target = product
   endif
@@ -126,3 +127,4 @@
     </span>
   {%- endif -%}
 </div>
+{% endunless %}
