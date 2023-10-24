@@ -1315,3 +1315,14 @@ async function handleFreebieInCart(cartPage) {
   }
   return;
 }
+//handle back btn press 
+document.addEventListener('readystatechange',()=>{
+  if(window.location.href.includes('/products/')){
+    let radio = document.querySelector('variant-radios')
+    if(radio){
+        radio.dispatchEvent(new Event('change'))
+    } else {
+        document.querySelector('variant-selects').dispatchEvent(new Event('change'))
+    }
+  }
+})
